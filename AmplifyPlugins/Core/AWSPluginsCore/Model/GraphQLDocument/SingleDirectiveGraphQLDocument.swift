@@ -73,7 +73,7 @@ extension SingleDirectiveGraphQLDocument {
             case .object(let values):
                 variables.updateValue(values, forKey: input.key)
             case .scalar(let value):
-                variables.updateValue(value, forKey: input.key)
+                variables.updateValue(value.graphQLDocumentValue, forKey: input.key)
             }
 
         }

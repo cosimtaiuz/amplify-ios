@@ -29,7 +29,8 @@ protocol ModelGraphQLRequestFactory {
     ///
     /// - seealso: `GraphQLQuery`, `GraphQLQueryType.list`
     static func list<M: Model>(_ modelType: M.Type,
-                               where predicate: QueryPredicate?) -> GraphQLRequest<[M]>
+                               where predicate: QueryPredicate?,
+                               apiName: String?) -> GraphQLRequest<[M]>
 
     /// Creates a `GraphQLRequest` that represents a query that expects a single value as a result.
     /// The request will be created with the correct correct document based on the `ModelSchema` and
@@ -41,7 +42,7 @@ protocol ModelGraphQLRequestFactory {
     /// - Returns: a valid `GraphQLRequest` instance
     ///
     /// - seealso: `GraphQLQuery`, `GraphQLQueryType.get`
-    static func get<M: Model>(_ modelType: M.Type, byId id: String) -> GraphQLRequest<M?>
+    static func get<M: Model>(_ modelType: M.Type, byId id: String, apiName: String?) -> GraphQLRequest<M?>
 
     // MARK: Mutation
 
@@ -56,7 +57,8 @@ protocol ModelGraphQLRequestFactory {
     static func mutation<M: Model>(of model: M,
                                    modelSchema: ModelSchema,
                                    where predicate: QueryPredicate?,
-                                   type: GraphQLMutationType) -> GraphQLRequest<M>
+                                   type: GraphQLMutationType,
+                                   apiName: String?) -> GraphQLRequest<M>
 
     /// Creates a `GraphQLRequest` that represents a create mutation
     /// for a given `model` instance.
@@ -65,7 +67,7 @@ protocol ModelGraphQLRequestFactory {
     ///   - model: the model instance populated with values
     /// - Returns: a valid `GraphQLRequest` instance
     /// - seealso: `GraphQLRequest.mutation(of:where:type:)`
-    static func create<M: Model>(_ model: M) -> GraphQLRequest<M>
+    static func create<M: Model>(_ model: M, apiName: String?) -> GraphQLRequest<M>
 
     /// Creates a `GraphQLRequest` that represents an update mutation
     /// for a given `model` instance.
@@ -76,7 +78,7 @@ protocol ModelGraphQLRequestFactory {
     /// - Returns: a valid `GraphQLRequest` instance
     /// - seealso: `GraphQLRequest.mutation(of:where:type:)`
     static func update<M: Model>(_ model: M,
-                                 where predicate: QueryPredicate?) -> GraphQLRequest<M>
+                                 where predicate: QueryPredicate?, apiName: String?) -> GraphQLRequest<M>
 
     /// Creates a `GraphQLRequest` that represents a delete mutation
     /// for a given `model` instance.
@@ -87,7 +89,7 @@ protocol ModelGraphQLRequestFactory {
     /// - Returns: a valid `GraphQLRequest` instance
     /// - seealso: `GraphQLRequest.mutation(of:where:type:)`
     static func delete<M: Model>(_ model: M,
-                                 where predicate: QueryPredicate?) -> GraphQLRequest<M>
+                                 where predicate: QueryPredicate?, apiName: String?) -> GraphQLRequest<M>
 
     // MARK: Subscription
 
@@ -101,7 +103,7 @@ protocol ModelGraphQLRequestFactory {
     ///
     /// - seealso: `GraphQLSubscription`, `GraphQLSubscriptionType`
     static func subscription<M: Model>(of: M.Type,
-                                       type: GraphQLSubscriptionType) -> GraphQLRequest<M>
+                                       type: GraphQLSubscriptionType, apiName: String?) -> GraphQLRequest<M>
 }
 
 // MARK: - Extension
@@ -113,52 +115,54 @@ protocol ModelGraphQLRequestFactory {
 /// with static types that conform to the `Model` protocol.
 extension GraphQLRequest: ModelGraphQLRequestFactory {
 
-    public static func create<M: Model>(_ model: M) -> GraphQLRequest<M> {
+    public static func create<M: Model>(_ model: M, apiName: String? = nil) -> GraphQLRequest<M> {
         let modelType = ModelRegistry.modelType(from: model.modelName) ?? Swift.type(of: model)
         let modelSchema = modelType.schema
-        return create(model, modelSchema: modelSchema)
+        return create(model, modelSchema: modelSchema, apiName: apiName)
     }
 
     public static func update<M: Model>(_ model: M,
-                                        where predicate: QueryPredicate? = nil) -> GraphQLRequest<M> {
+                                        where predicate: QueryPredicate? = nil, apiName: String? = nil) -> GraphQLRequest<M> {
         let modelType = ModelRegistry.modelType(from: model.modelName) ?? Swift.type(of: model)
         let modelSchema = modelType.schema
-        return update(model, modelSchema: modelSchema, where: predicate)
+        return update(model, modelSchema: modelSchema, where: predicate, apiName: apiName)
     }
 
     public static func delete<M: Model>(_ model: M,
-                                        where predicate: QueryPredicate? = nil) -> GraphQLRequest<M> {
+                                        where predicate: QueryPredicate? = nil, apiName: String? = nil) -> GraphQLRequest<M> {
         let modelType = ModelRegistry.modelType(from: model.modelName) ?? Swift.type(of: model)
         let modelSchema = modelType.schema
         return delete(model, modelSchema: modelSchema, where: predicate)
     }
 
-    public static func create<M: Model>(_ model: M, modelSchema: ModelSchema) -> GraphQLRequest<M> {
-        return mutation(of: model, modelSchema: modelSchema, type: .create)
+    public static func create<M: Model>(_ model: M, modelSchema: ModelSchema, apiName: String? = nil) -> GraphQLRequest<M> {
+        return mutation(of: model, modelSchema: modelSchema, type: .create, apiName: apiName)
     }
 
     public static func update<M: Model>(_ model: M,
                                         modelSchema: ModelSchema,
-                                        where predicate: QueryPredicate? = nil) -> GraphQLRequest<M> {
-        return mutation(of: model, modelSchema: modelSchema, where: predicate, type: .update)
+                                        where predicate: QueryPredicate? = nil, apiName: String? = nil) -> GraphQLRequest<M> {
+        return mutation(of: model, modelSchema: modelSchema, where: predicate, type: .update, apiName: apiName)
     }
 
     public static func delete<M: Model>(_ model: M,
                                         modelSchema: ModelSchema,
-                                        where predicate: QueryPredicate? = nil) -> GraphQLRequest<M> {
-        return mutation(of: model, modelSchema: modelSchema, where: predicate, type: .delete)
+                                        where predicate: QueryPredicate? = nil, apiName: String? = nil) -> GraphQLRequest<M> {
+        return mutation(of: model, modelSchema: modelSchema, where: predicate, type: .delete, apiName: apiName)
     }
 
     public static func mutation<M: Model>(of model: M,
                                           where predicate: QueryPredicate? = nil,
-                                          type: GraphQLMutationType) -> GraphQLRequest<M> {
-        mutation(of: model, modelSchema: model.schema, where: predicate, type: type)
+                                          type: GraphQLMutationType,
+                                          apiName: String? = nil) -> GraphQLRequest<M> {
+        mutation(of: model, modelSchema: model.schema, where: predicate, type: type, apiName: apiName)
     }
 
     public static func mutation<M: Model>(of model: M,
                                           modelSchema: ModelSchema,
                                           where predicate: QueryPredicate? = nil,
-                                          type: GraphQLMutationType) -> GraphQLRequest<M> {
+                                          type: GraphQLMutationType,
+                                          apiName: String? = nil) -> GraphQLRequest<M> {
         var documentBuilder = ModelBasedGraphQLDocumentBuilder(modelSchema: modelSchema,
                                                                operationType: .mutation)
         documentBuilder.add(decorator: DirectiveNameDecorator(type: type))
@@ -179,28 +183,32 @@ extension GraphQLRequest: ModelGraphQLRequestFactory {
         }
 
         let document = documentBuilder.build()
-        return GraphQLRequest<M>(document: document.stringValue,
+        return GraphQLRequest<M>(apiName: apiName,
+                                 document: document.stringValue,
                                  variables: document.variables,
                                  responseType: M.self,
                                  decodePath: document.name)
     }
 
     public static func get<M: Model>(_ modelType: M.Type,
-                                     byId id: String) -> GraphQLRequest<M?> {
+                                     byId id: String,
+                                     apiName: String? = nil) -> GraphQLRequest<M?> {
         var documentBuilder = ModelBasedGraphQLDocumentBuilder(modelSchema: modelType.schema,
                                                                operationType: .query)
         documentBuilder.add(decorator: DirectiveNameDecorator(type: .get))
         documentBuilder.add(decorator: ModelIdDecorator(id: id))
         let document = documentBuilder.build()
 
-        return GraphQLRequest<M?>(document: document.stringValue,
+        return GraphQLRequest<M?>(apiName: apiName,
+                                  document: document.stringValue,
                                   variables: document.variables,
                                   responseType: M?.self,
                                   decodePath: document.name)
     }
 
     public static func list<M: Model>(_ modelType: M.Type,
-                                      where predicate: QueryPredicate? = nil) -> GraphQLRequest<[M]> {
+                                      where predicate: QueryPredicate? = nil,
+                                      apiName: String? = nil) -> GraphQLRequest<[M]> {
         var documentBuilder = ModelBasedGraphQLDocumentBuilder(modelSchema: modelType.schema,
                                                                operationType: .query)
         documentBuilder.add(decorator: DirectiveNameDecorator(type: .list))
@@ -212,20 +220,23 @@ extension GraphQLRequest: ModelGraphQLRequestFactory {
         documentBuilder.add(decorator: PaginationDecorator())
         let document = documentBuilder.build()
 
-        return GraphQLRequest<[M]>(document: document.stringValue,
+        return GraphQLRequest<[M]>(apiName: apiName,
+                                   document: document.stringValue,
                                    variables: document.variables,
                                    responseType: [M].self,
                                    decodePath: document.name + ".items")
     }
 
     public static func subscription<M: Model>(of modelType: M.Type,
-                                              type: GraphQLSubscriptionType) -> GraphQLRequest<M> {
+                                              type: GraphQLSubscriptionType,
+                                              apiName: String? = nil) -> GraphQLRequest<M> {
         var documentBuilder = ModelBasedGraphQLDocumentBuilder(modelSchema: modelType.schema,
                                                                operationType: .subscription)
         documentBuilder.add(decorator: DirectiveNameDecorator(type: type))
         let document = documentBuilder.build()
 
-        return GraphQLRequest<M>(document: document.stringValue,
+        return GraphQLRequest<M>(apiName: apiName,
+                                 document: document.stringValue,
                                  variables: document.variables,
                                  responseType: modelType,
                                  decodePath: document.name)
